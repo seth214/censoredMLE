@@ -1,0 +1,23 @@
+---
+title: "EM Algorithm"
+author: "Noah Gblonyah, Seth Okyere, Michael Throolin"
+date: "4/14/2022"
+output: pdf_document
+---
+
+## The EM Algorithm
+
+Another common tool used for getting a maximum-likelihood estimation of censored data is called the EM Algorithm. Here, the 'E' canonically stands for the 'Expectation' step and 'M' represents the 'Maximization' step. Hence the EM Algorithm takes the expectation of the log-likelihood function, then maximizes that quantity. It repeats that process until the parameter converges to a specified value.
+
+Formally, these two steps can be written out as follows:
+
+Let $\mathbf{\theta}^{(p)}$ represent the $p^{th}$ iteration of the algorithm to estimate the parameter $\theta$.
+
+*Expectation (E-Step): *
+Compute $Q \left(\mathbf{\theta}^{(p)} | \mathbf{\theta}^{(p-1)} \right) = E\left[\log \left(f(\mathbf{x}|\mathbf{\theta}^{(p)} \right) |\mathbf{y},\mathbf{\theta}^{(p-1)}\right]$
+
+*Maximization (M-Step): *
+Maximize $Q \left(\mathbf{\theta}^{(p)} | \mathbf{\theta}^{(p-1)} \right)$
+
+
+
