@@ -3,15 +3,22 @@ title: "EM Algorithm"
 author: "Noah Gblonyah, Seth Okyere, Michael Throolin"
 date: "4/14/2022"
 output: pdf_document
+header-includes:
+   - \usepackage[style=authoryear, backend=bibtex]{biblatex}
+   - \usepackage{biblatex}
+   - \addbibresource{bibliography.bib}
+bibliography: bibliography.bib   
 ---
 
 ## The EM Algorithm
 
+*The EM Algorithm has its roots in work done in the 1950s but really came into statistical prominence after the seminal work of Dempster, Laird, and Rubin, which detailed the underlying structure of the algorithm and illustrated its use in a wide variety of applications. [@casella_berger_2002].*
+
 Another common tool used for getting a maximum-likelihood estimation of censored data is called the EM Algorithm. Here, the 'E' canonically stands for the 'Expectation' step and 'M' represents the 'Maximization' step. Hence the EM Algorithm takes the expectation of the log-likelihood function, then maximizes that quantity. It repeats that process until the parameter converges to a specified value.
 
-Formally, these two steps can be written out as follows:
+Formally, if we let $\mathbf{\theta}^{(p)}$ represent the $p^{th}$ iteration of the algorithm to estimate the parameter $\theta$. these two steps can be written out as follows:
 
-Let $\mathbf{\theta}^{(p)}$ represent the $p^{th}$ iteration of the algorithm to estimate the parameter $\theta$.
+\setlength{\leftskip}{2cm}
 
 *Expectation (E-Step): *
 Compute $Q \left(\mathbf{\theta}^{(p)} | \mathbf{\theta}^{(p-1)} \right) = E\left[\log \left(f(\mathbf{x}|\mathbf{\theta}^{(p)} \right) |\mathbf{y},\mathbf{\theta}^{(p-1)}\right]$
@@ -19,5 +26,15 @@ Compute $Q \left(\mathbf{\theta}^{(p)} | \mathbf{\theta}^{(p-1)} \right) = E\lef
 *Maximization (M-Step): *
 Maximize $Q \left(\mathbf{\theta}^{(p)} | \mathbf{\theta}^{(p-1)} \right)$
 
+\setlength{\leftskip}{0cm}
 
+The EM algorithm can often lead to functions that are tricky to evaluate. However in special cases, such as the exponential family family case, the algorithm becomes much easier to evaluate. Specifically a function $f(\mathbf{x} | \theta)$ is an exponential family if it can be written as $f(\mathbf{x} | \theta) = h(\mathbf{x} )c(\theta)\exp \left( \sum_{i=1}^k w_i(\theta)t_i( \mathbf{x} ) \right)$. It has been shown that we can use the complete sufficient statistic $T(\mathbf{X}) = \sum_{i=1}^k t_i(\mathbf{x})$ to estimate the parameter $\mathbf{\theta}$. This is done as follows:
 
+\setlength{\leftskip}{2cm}
+*Expectation (E-Step): *
+Estimate $\mathbf{t(x)}$ by finding $\mathbf{t}^{(p-1)} =E \left( \mathbf{t(x)}|\mathbf{y},\theta^{(p-1)} \right)$
+
+*Maximization (M-Step): *
+Determine $\theta^{(p)}$ as the solution to $E \left( \mathbf{t(x)} | \theta \right)= \mathbf{t}^{(p-1)}$
+
+\setlength{\leftskip}{0cm}
