@@ -38,3 +38,93 @@ Estimate $\mathbf{t(x)}$ by finding $\mathbf{t}^{(p-1)} =E \left( \mathbf{t(x)}|
 Determine $\theta^{(p)}$ as the solution to $E \left( \mathbf{t(x)} | \theta \right)= \mathbf{t}^{(p-1)}$
 
 \setlength{\leftskip}{0cm}
+
+## Example
+
+For demonstration purposes, we will simulate data from an exponential distribution, censor the data, and use the EM algorithm to estimate $\theta$.
+
+Now, noting that a random sample for the exponential family has a complete sufficient statistic of $\sum_{i=1}^n x_i$, we must find the expectation of $E(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)})$.
+
+We can begin by separating the known data from the unknown data. Will call use an indicator, $d_i$ to indicate presence of data at $i$, and if a variable is missing we will call it $z_i$.
+
+Supposing for each insured person we get $(c_{(1,i)}, c_{(2,i)}, x_i)$, where $c_{(1,i)}$ represents the deductible and $c_{(2,i)}$ represents the policy limit.
+
+Hence, $$E\left(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)} \right)  = E \left(\sum_{i=1}^n y_i d_i + z_i(1-d_i) \right)$$
+
+To estimate $z_i$, we will use the memoryless property of the exponential distribution. Hence,
+
+$$z_i = \begin{cases} \min\{\theta^{(p-1)},c_{(1,i)}\}  & 0 < z_i \leq c_{(1,i)} \\
+c_{(2,i)}+ \theta^{(p-1)} & z_i > c_{(2,i)}
+\end{cases}
+$$
+This means $$\begin{aligned}
+E(z_i) &= \frac{\int_0^{c_{(1,i)}} \min\{\theta^{(p-1)},c_{(1,i)}\}  \frac{1}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}} \, dx_i + \int_{c_{(2,i)}}^{\infty} (c_{(2,i)}+ \theta^{(p-1)})  \frac{1}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}} \, dx_i}
+{\int_0^{c_{(1,i)}}\frac{x_i}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}} \, dx_i + \int_{c_{(2,i)}}^{\infty}  \frac{x_i}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}}} \\
+&= \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}} 
+\end{aligned}$$
+
+Therefore, we can simplify our expectation step down to
+
+$$\begin{aligned} E\left(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)} \right)
+&= E \left(\sum_{i=1}^n y_i d_i + z_i(1-d_i) \right)
+\end{aligned}$$
+$$
+= \sum_{i=1}^n y_i d_i + (1-d_i) \left( \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}\right)
+$$
+
+And our maximization step is the solution to
+\[\begin{aligned}
+E(\mathbf{t(x)} | \theta^{(p)}) &= E(\sum_{i=1}^n x_i | \theta^{(p)}) =n \, \theta^{(p)} \\
+&= \sum_{i=1}^n y_i d_i + (1-d_i) \left( \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}\right)
+\end{aligned}
+\]
+\[
+\implies \theta^{(p)} =\frac{1}{n}\sum_{i=1}^n y_i d_i + (1-d_i) \left( \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}\right)
+\]
+```{r}
+library(tidyverse)
+library(naniar)
+set.seed(53523)
+c <- c(500,6000)
+
+#Simulate Data
+n_customers <- 1000
+damages <- round(rexp(n_customers, 1/1000),2)
+deductible <- round(runif(n_customers, min = 0, max = 600))
+limit <- round(runif(n_customers, min = 5000, max = 20000))
+
+customers <- as.data.frame(cbind(deductible, limit, damages))
+customers[(damages < deductible),]$damages = NA
+customers[(limit < damages),]$damages = NA
+hist(customers$damages)
+
+
+observed_data <- customers[!is.na(customers$damages),]
+unobserved_data <- customers[is.na(customers$damages),]
+
+sum_observed <- sum(observed_data$damages)
+
+theta_new <- 500
+theta <- 0
+
+i = 0
+#Expectation step
+while((theta - theta_new)^2 >0){
+  theta <- theta_new
+m <- min(theta, unobserved_data$deductible)
+  numerator <- m-m*exp(-unobserved_data$deductible/theta) +
+    (unobserved_data$limit +theta)*exp(-unobserved_data$limit/theta)
+  
+  denominator <- theta -(unobserved_data$deductible + theta)*exp(-unobserved_data$deductible/theta)
+  + (unobserved_data$limit + theta)*exp(-unobserved_data$limit/theta)
+  
+expectation <- sum_observed + sum(numerator/denominator)
+
+theta_new <- (expectation)/n_customers
+ i<- i +1
+}
+```
