@@ -10,6 +10,9 @@ header-includes:
 bibliography: bibliography.bib   
 ---
 
+```{r include = FALSE}
+library(tidyverse)
+```
 ## The EM Algorithm
 
 *The EM Algorithm has its roots in work done in the 1950s but really came into statistical prominence after the seminal work of Dempster, Laird, and Rubin, which detailed the underlying structure of the algorithm and illustrated its use in a wide variety of applications. [@casella_berger_2002].*
@@ -21,7 +24,7 @@ Formally, if we let $\mathbf{\theta}^{(p)}$ represent the $p^{th}$ iteration of 
 \setlength{\leftskip}{2cm}
 
 *Expectation (E-Step): *
-Compute $Q \left(\mathbf{\theta}^{(p)} | \mathbf{\theta}^{(p-1)} \right) = E\left[\log \left(f(\mathbf{x}|\mathbf{\theta}^{(p)} \right) |\mathbf{y},\mathbf{\theta}^{(p-1)}\right]$
+Compute $Q \left(\mathbf{\theta}^{(p)} | \mathbf{\theta}^{(p-1)} \right) = E\left[\log \left(f(\mathbf{x}|\mathbf{\theta}^{(p)} \right) |\mathbf{y},\mathbf{\theta}^{(p-1)}\right]$ where $\mathbf{x}$ represents the complete data and $\mathbf{y}$ represents the censored, or incomplete data.
 
 *Maximization (M-Step): *
 Maximize $Q \left(\mathbf{\theta}^{(p)} | \mathbf{\theta}^{(p-1)} \right)$
@@ -32,26 +35,24 @@ The EM algorithm can often lead to functions that are tricky to evaluate. Howeve
 
 \setlength{\leftskip}{2cm}
 *Expectation (E-Step): *
-Estimate $\mathbf{t(x)}$ by finding $\mathbf{t}^{(p-1)} =E \left( \mathbf{t(x)}|\mathbf{y},\theta^{(p-1)} \right)$
+Estimate $\mathbf{t(x)}$ by finding $\mathbf{t}^{(p-1)} =E \left( \mathbf{t(x)}|\mathbf{y},\theta^{(p-1)} \right)$ where $\mathbf{x}$ represents the complete data and $\mathbf{y}$ represents the censored, or incomplete data.
 
 *Maximization (M-Step): *
 Determine $\theta^{(p)}$ as the solution to $E \left( \mathbf{t(x)} | \theta \right)= \mathbf{t}^{(p-1)}$
 
 \setlength{\leftskip}{0cm}
 
-## Example
+## Example (Exponential Distribution)
 
-For demonstration purposes, we will simulate data from an exponential distribution, censor the data, and use the EM algorithm to estimate $\theta$.
+For a definitive example, suppose we have data from an exponential distribution with unknown parameter $\theta$. For each sample, we are giving a vector of values, $(c_{(1,i)}, c_{(2,i)}, x_i)$, where $c_{(1,i)}$ represents a left-censoring point, $c_{(2,i)}$ represents a right-censoring point, and $x_i$ is the value the sample. If the $i^{th}$ sample is present, or rather if $c_{(1,i)} < x_i <c_{(2,i)}$ , we will call define $y_i = x_i$. Analagously, if the $i^{th}$ sample is absent,  or $c_{(1,i)} \geq x_i \text{ or }  x_i \geq c_{(2,i)}$, we will define $z_i = x_i$. Hence, $\mathbf{x}$ is a vector of our complete data, $\mathbf{y}$ is a vector of our incomplete data, and $\mathbf{z}$ is a vector of our unknown, or missing data. Our object is to use the EM algorithm to estimate $\theta$ using only $y$ and the censoring points $c_{(1,i)}$ and $c_{(2,i)}$ corresponding with the missing values known in $\mathbf{z}$.
 
-Now, noting that a random sample for the exponential family has a complete sufficient statistic of $\sum_{i=1}^n x_i$, we must find the expectation of $E(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)})$.
+To begin, note that a random sample for the exponential family has a complete sufficient statistic of $\sum_{i=1}^n x_i$. Hence for the *E-Step* we must find the expectation of $E(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)})$.
 
-We can begin by separating the known data from the unknown data. Will call use an indicator, $d_i$ to indicate presence of data at $i$, and if a variable is missing we will call it $z_i$.
+Using and indicator variable $d_i = \begin{cases} 1 & x_i \in \mathbf{y} \\ 0 & x_i \in \mathbf{z}\end{cases}$ indicating presence and absence of data, we can expand
 
-Supposing for each insured person we get $(c_{(1,i)}, c_{(2,i)}, x_i)$, where $c_{(1,i)}$ represents the deductible and $c_{(2,i)}$ represents the policy limit.
+$$E\left(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)} \right)  = E \left(\sum_{i=1}^n y_i d_i + z_i(1-d_i) \right)$$
 
-Hence, $$E\left(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)} \right)  = E \left(\sum_{i=1}^n y_i d_i + z_i(1-d_i) \right)$$
-
-To estimate $z_i$, we will use the memoryless property of the exponential distribution. Hence,
+Now, we need to estimate or missing data, $z_i$. To do this, we will use the memoryless property of the exponential distribution to get 
 
 $$z_i = \begin{cases} \min\{\theta^{(p-1)},c_{(1,i)}\}  & 0 < z_i \leq c_{(1,i)} \\
 c_{(2,i)}+ \theta^{(p-1)} & z_i > c_{(2,i)}
@@ -85,11 +86,15 @@ E(\mathbf{t(x)} | \theta^{(p)}) &= E(\sum_{i=1}^n x_i | \theta^{(p)}) =n \, \the
 \implies \theta^{(p)} =\frac{1}{n}\sum_{i=1}^n y_i d_i + (1-d_i) \left( \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
 {\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}\right)
 \]
+
+### Simulation
+
+In the actuarial context, we could encounter data that includes the deductible, policy limit, and losses for each customer, where the losses would be unreported if they exceed the policy limit or are below the deductible.
+
+We will use computer simulation to see how well the algorithm holds given the parameter $\theta = 1000$.
+
 ```{r}
-library(tidyverse)
-library(naniar)
 set.seed(53523)
-c <- c(500,6000)
 
 #Simulate Data
 n_customers <- 1000
@@ -97,34 +102,45 @@ damages <- round(rexp(n_customers, 1/1000),2)
 deductible <- round(runif(n_customers, min = 0, max = 600))
 limit <- round(runif(n_customers, min = 5000, max = 20000))
 
+#combine data into one data frame
 customers <- as.data.frame(cbind(deductible, limit, damages))
-customers[(damages < deductible),]$damages = NA
+#censor data
+customers[(damages < deductible),]$damages = NA 
 customers[(limit < damages),]$damages = NA
 hist(customers$damages)
 
-
+#Separate into observed and unobserved data frames
 observed_data <- customers[!is.na(customers$damages),]
 unobserved_data <- customers[is.na(customers$damages),]
 
+
+#EM Algorithm
 sum_observed <- sum(observed_data$damages)
 
+#Initialize theta
 theta_new <- 500
 theta <- 0
 
-i = 0
-#Expectation step
-while((theta - theta_new)^2 >0){
+#iterate until difference between previous theta and new theta is small
+while((theta - theta_new)^2 > 0){
   theta <- theta_new
-m <- min(theta, unobserved_data$deductible)
+  
+  #Expectation step
+  m <- min(theta, unobserved_data$deductible)
+  
   numerator <- m-m*exp(-unobserved_data$deductible/theta) +
-    (unobserved_data$limit +theta)*exp(-unobserved_data$limit/theta)
-  
-  denominator <- theta -(unobserved_data$deductible + theta)*exp(-unobserved_data$deductible/theta)
-  + (unobserved_data$limit + theta)*exp(-unobserved_data$limit/theta)
-  
-expectation <- sum_observed + sum(numerator/denominator)
+      (unobserved_data$limit +theta)*exp(-unobserved_data$limit/theta)
+    
+  denominator <- theta -(unobserved_data$deductible + theta)*
+    exp(-unobserved_data$deductible/theta) + 
+    (unobserved_data$limit + theta)*exp(-unobserved_data$limit/theta)
 
-theta_new <- (expectation)/n_customers
- i<- i +1
+  expectation <- sum_observed + sum(numerator/denominator)
+  
+  #Maximization step
+  theta_new <- (expectation)/n_customers
 }
+theta_new #display outcome
 ```
+
+The output from this simulation estimated the value of $\theta$ to be `r theta_new`, which is `r 1000-theta_new` from the known value of 1000.
