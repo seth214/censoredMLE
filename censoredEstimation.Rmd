@@ -1,7 +1,7 @@
 ---
 title: "Estimation Methods for Incomplete Insurance Data"
 author: "Noah Gblonyah, Seth Okyere, Michael Throolin"
-date: "3/25/2022"
+date: "29 April 2022"
 output: pdf_document
 header-includes:
    - \usepackage[style=authoryear, backend=bibtex]{biblatex}
@@ -11,17 +11,304 @@ bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+library(kableExtra)
+library(readxl)
+library(tidyverse)
 ```
 
-## Introduction
+# Introduction
 
 The growth of the insurance industry is fueled by societal expectations for protection against a variety of risks associated with unfavorable random events that have a large economic impact. Insurance is a process that involves the payment of a premium in exchange for an equitable manner of offsetting the risk of a potential future loss. The basic idea is to set up a fund to which insured members contribute specified sums of premium for specific loss levels. When the random events that policyholders are protected against occur giving rise to claims then claims are settled from the fund.
 
 The maximum likelihood (MLE) technique is commonly used by insurance firms to estimate claim distribution parameters. Maximum likelihood techniques are typically applied to complete data sets where we have exact values for all of the data points; however, data is rarely perfect in real life. When modeling the underlying loss variable, insurance contracts have coverage adjustments that must be taken into account. Typically, loss control methods like deductibles, policy limitations, and coinsurance are implemented to reduce undesirable policyholder behavioral effects such as adverse selection.
 
-Estimation by method of moments and maximum likelihood are often easy to do, but these estimators tend to perform poorly, mainly because they use a few features of the data rather than the entire set of observations. It is important to use as much information as possible when the population has a heavy tail as in insurance data. This project discusses some considerations for properly handling truncated and censored data for modeling of insurance data. The methods to be discussed in this study are Maximum Likelihood Estimations and the Expectation Maximization Algorithm.
+Estimation by method of moments and maximum likelihood are often easy to do, but these estimators tend to perform poorly, mainly because they use a few features of the data rather than the entire set of observations. It is important to use as much information as possible when the population has a heavy tail as in insurance data. This project discusses some considerations for properly handling truncated and censored data for modeling of insurance data. The methods to be discussed in this study are Maximum Likelihood Estimations and the EM Algorithm.
 
+# Methodology 
+
+## Maximum Likelihood Estimation
+
+### Insurance Contracts
+
+Insurance contracts have coverage modifications that need to be considered when modeling the underlying loss variable. Usually, the coverage modifications such as deductibles, policy limits, and coinsurance are introduced as loss control strategies so that unfavorable policyholder behavioral effects can be minimized. There are also situations when certain features of the contract emerge naturally (e.g., the value of insured property in general insurance is a natural upper policy limit). Here we describe two common transformations of the loss variable along with the corresponding probability distribution/mass functions. 
+
+## Truncation 
+Incomplete data in the form of truncation occurs when an observation is not recorded due to that observation being below or above a certain threshold. In practice these are referred to as left truncation and right truncation respectively. A common example of left truncation that arises in practice when working with insurance data is with ordinary insurance deductibles.  
+
+### Left Truncation
+An observation is left truncated at d if it is not recorded when less than or equal to  d and recorded at the observed value if the observation is greater than $d$. Let $X$ be a random variable representing the size of loss and $L$ be a random variable representing the recorded value. Mathematically, left truncation would be represented as:
+
+$$
+L =
+\begin{cases}
+\text{not recorded} &:x \leq d\\
+x &:x> d
+\end{cases}
+$$
+The likelihood function is 
+$$P(x|x>d) = f(x)/S(d)$$ 
+where $S(.) = 1- F(.)$ 
+There are a variety of ways that insurance deductibles operate, but with ordinary insurance deductibles there is no incentive for policyholders to report losses less than the deductible amount to the insurance company.  In this situation, the insurer’s data is left truncated for these losses which would be paid by the policyholder and not recorded in the insurer’s data systems. 
+
+## Censoring
+Incomplete data in the form of censoring occurs when the observation is recorded at a fixed value if it is below or above a certain threshold. In practice this is referred to as left censoring and right censoring respectively. The right censoring situation arises frequently when working with policy limits in insurance data. 
+
+### Right Censoring
+An observation is right censored at u if it is recorded at its observed value if less than u and recorded at u if the observed value is greater than or equal to u. Let X be a random variable representing the size of loss and L be a random variable representing the recorded value. Mathematically, right censoring would be represented as:
+
+$$
+L =
+\begin{cases}
+x &:x < u\\
+u &:x\geq u
+\end{cases}
+$$
+$$ f(x|u) = F_X(u) + S_X(u)$$
+
+It is common for an insurance policy to have a limit which is the maximum amount that the insurer will pay under the terms of the insurance agreement. In situations where the actual damages exceed the limits of the policy, the payment from the insurer will be limited to the policy limit and the loss will be considered right censored.
+
+The derivation of the estimator for the parameter through the maximum likelihood approach. 
+
+- Likelihood function 
+
+\begin{align*}
+ L(\theta) &= \prod_{i=1}^{n}\frac{\frac{1}{\theta}e^{-x_i/\theta}}{e^{-d_i/\theta}}\cdot \prod_{i=n+1}^{n+c}\frac{e^{-x_i/\theta}}{e^{-d_i/\theta}} \\
+ &= \prod_{i=1}^{n}{\frac{1}{\theta}e^{-(x_i-d_i)/\theta}}\cdot \prod_{i=n+1}^{n+c}{e^{-(x_i-d_i)/\theta}} \\
+ &= \frac{1}{\theta^n}e^{-\sum_{i=1}^{n+c}(x_i-d_i)/\theta}
+\end{align*}
+
+- The log-likelihood and derivative
+
+\begin{align*}
+ \ell(\theta) & = -n\ln\theta- \frac{\sum_{i=1}^{n+c}(x_i - d_i)}{\theta}\\
+ \ell'(\theta) & = -\frac{n}{\theta}+ \frac{\sum_{i=1}^{n+c}(x_i - d_i)}{\theta^2} = 0
+\end{align*}
+
+- The estimator 
+$$\hat{\theta} = \frac{\sum_{i=1}^{n+c}(x_i - d_i)}{n}$$
+
+
+# Application
+
+We are given the following information about a group of policies:
+
+Assume payments at the policy limit resulted from losses above the maximum covered loss.
+
+```{r, echo=FALSE, fig.pos='H', out.extra=""}
+data <- data.frame(Claim.Payment = c(30, 50,80,120,150), Deductible = c(0, 10, 10, 20, 30),
+                   Policy.Limit = c(80, 100, 100, 150, 150))
+kable(data, caption = "Insurance Claims payments with deductibles and policy limits.") %>%
+  kable_styling(position = "center",
+                latex_options = "HOLD_position")
+```
+We are given that the losses follow the exponential distribution. The aim is to determine the likelihood function and the maximum likehood of the mean losses assuming that the losses are independent.
+
+```{r, echo=FALSE, fig.pos='H', out.extra=""}
+data1 <- data.frame(Loss.Payment = c(30, 60,90,140,"180+"), Deductible = c(0, 10, 10, 20, 30),
+                   Maximum.Covered = c(80, 110, 110, 170, 180),
+                   likelihood.function = c("f(30)", "f(60)/S(10)", "f(90)/S(10)", 
+                                           "f(140)/S(20)","S(180)/S(30)"))
+kable(data1, caption = "Insurance data with maximum covered losses and their respective likelihood funtions.") %>%
+  kable_styling(position = "center",
+                latex_options = "HOLD_position")
+```
+$$L(\theta|x) = f(30)\frac{f(60)}{S(10)}\frac{f(90)}{S(10)}\frac{f(140)}{S(20)}\frac{S(180)}{S(30)}$$
+$$L(\theta|x) = \frac{1}{\theta}e^{-\frac{30}{\theta}}\frac{\frac{1}{\theta}e^{-\frac{60}{\theta}}}{e^{-\frac{10}{\theta}}}\frac{\frac{1}{\theta}e^{-\frac{90}{\theta}}}{e^{-\frac{10}{\theta}}}\frac{\frac{1}{\theta}e^{-\frac{140}{\theta}}}{e^{-\frac{20}{\theta}}}\frac{e^{-\frac{180}{\theta}}}{e^{-\frac{30}{\theta}}}$$
+
+$$L(\theta|x) = \frac{1}{\theta}e^{-\frac{30}{\theta}}\frac{1}{\theta}e^{-\frac{50}{\theta}}\frac{1}{\theta}e^{-\frac{80}{\theta}}\frac{1}{\theta}e^{-\frac{120}{\theta}}e^{-\frac{150}{\theta}}$$
+
+$$L(\theta|x) = \frac{1}{\theta^4}e^{-\frac{430}{\theta}}$$
+
+$$logL(\theta|x) = \ell (\theta|x) = -4ln(\theta)-\frac{430}{\theta}$$
+
+$$\frac{d}{d\theta}\ell (\theta|x) = -\frac{4}{\theta}+\frac{430}{\theta^2} = 0$$
+$$-4\theta + 430 = 0$$
+$$4\theta = 430$$
+$$\theta = \frac{430}{4} = 107.5$$
+
+Now we check if $\theta$ is the maximum
+
+$$\frac{d^2}{d\theta^2}\ell (\theta|x) = \frac{4}{\theta^2}-\frac{860}{\theta^3}$$
+$$\frac{d^2}{d\theta^2}\ell (\theta|x) = \frac{4}{107.5^2}-\frac{860}{107.5^3} = - 0.000346 < 0$$
+Hence, $\hat{\theta}_{MLE} = 107.5$
+
+**Alternatively**
+
+$\hat{\theta}_{MLE}$ for an exponential is distribution is given by
+
+$$\hat{\theta}_{MLE} = \frac{\sum_{i=1}^{n+c} (x_i - d_i)}{n}$$
+$$\hat{\theta}_{MLE} =\frac{30+50+80+120+150}{4} = 107.5$$
+Where;
+
+$n =$ number of uncensored data
+$c =$ number of censored data points
+$x_i =$ observed value, or censoring point, or censored data
+$d_i=$ truncated point
+
+```{r}
+insurance_payment <- read_excel("insurance.payment.xlsx")
+
+exponential.mle <- function(payment,max.covered){
+  theta.mle <- sum(payment)/ length(payment[payment < max.covered])
+  return(theta.mle)
+}
+
+exponential.likelihood <- function(payment, theta){
+  n <- length(payment)
+  likelihood <- 0
+  for(i in 1:length(theta)){
+  power <- -sum(payment)/theta[i]
+  likelihood[i] <- -n*log(theta[i])+power
+  }
+  data <- tibble(theta = theta, likelihood = likelihood)
+  plot <- data %>%
+    ggplot(aes(x = theta, y = likelihood)) +
+    geom_point()+
+    geom_smooth() +
+    xlim(0,1000) +
+    ylim(-30000,0)
+ return(plot)   
+}
+payment <- insurance_payment$payment
+max.covered <- 1100
+theta <- 1:7000
+exponential.mle(payment ,  max.covered)
+exponential.likelihood(payment, theta)
+
+```
+
+## The EM Algorithm
+
+*The EM Algorithm has its roots in work done in the 1950s but really came into statistical prominence after the seminal work of Dempster, Laird, and Rubin, which detailed the underlying structure of the algorithm and illustrated its use in a wide variety of applications. [@casella_berger_2002].*
+
+Another common tool used for getting a maximum-likelihood estimation of censored data is called the EM Algorithm. Here, the 'E' canonically stands for the 'Expectation' step and 'M' represents the 'Maximization' step. Hence the EM Algorithm takes the expectation of the log-likelihood function, then maximizes that quantity. It repeats that process until the parameter converges to a specified value.
+
+Formally, if we let $\mathbf{\theta}^{(p)}$ represent the $p^{th}$ iteration of the algorithm to estimate the parameter $\theta$. these two steps can be written out as follows:
+
+\setlength{\leftskip}{2cm}
+
+*Expectation (E-Step): *
+Compute $Q \left(\mathbf{\theta}^{(p)} | \mathbf{\theta}^{(p-1)} \right) = E\left[\log \left(f(\mathbf{x}|\mathbf{\theta}^{(p)} \right) |\mathbf{y},\mathbf{\theta}^{(p-1)}\right]$ where $\mathbf{x}$ represents the complete data and $\mathbf{y}$ represents the censored, or incomplete data.
+
+*Maximization (M-Step): *
+Maximize $Q \left(\mathbf{\theta}^{(p)} | \mathbf{\theta}^{(p-1)} \right)$
+
+\setlength{\leftskip}{0cm}
+
+The EM algorithm can often lead to functions that are tricky to evaluate. However in special cases, such as the exponential family family case, the algorithm becomes much easier to evaluate. Specifically a function $f(\mathbf{x} | \theta)$ is an exponential family if it can be written as $f(\mathbf{x} | \theta) = h(\mathbf{x} )c(\theta)\exp \left( \sum_{i=1}^k w_i(\theta)t_i( \mathbf{x} ) \right)$. It has been shown that we can use the complete sufficient statistic $T(\mathbf{X}) = \sum_{i=1}^k t_i(\mathbf{x})$ to estimate the parameter $\mathbf{\theta}$. This is done as follows:
+
+\setlength{\leftskip}{2cm}
+*Expectation (E-Step): *
+Estimate $\mathbf{t(x)}$ by finding $\mathbf{t}^{(p-1)} =E \left( \mathbf{t(x)}|\mathbf{y},\theta^{(p-1)} \right)$ where $\mathbf{x}$ represents the complete data and $\mathbf{y}$ represents the censored, or incomplete data.
+
+*Maximization (M-Step): *
+Determine $\theta^{(p)}$ as the solution to $E \left( \mathbf{t(x)} | \theta \right)= \mathbf{t}^{(p-1)}$
+
+\setlength{\leftskip}{0cm}
+
+## Example (Exponential Distribution)
+
+For a definitive example, suppose we have data from an exponential distribution with unknown parameter $\theta$. For each sample, we are giving a vector of values, $(c_{(1,i)}, c_{(2,i)}, x_i)$, where $c_{(1,i)}$ represents a left-censoring point, $c_{(2,i)}$ represents a right-censoring point, and $x_i$ is the value the sample. If the $i^{th}$ sample is present, or rather if $c_{(1,i)} < x_i <c_{(2,i)}$ , we will call define $y_i = x_i$. Analagously, if the $i^{th}$ sample is absent,  or $c_{(1,i)} \geq x_i \text{ or }  x_i \geq c_{(2,i)}$, we will define $z_i = x_i$. Hence, $\mathbf{x}$ is a vector of our complete data, $\mathbf{y}$ is a vector of our incomplete data, and $\mathbf{z}$ is a vector of our unknown, or missing data. Our object is to use the EM algorithm to estimate $\theta$ using only $y$ and the censoring points $c_{(1,i)}$ and $c_{(2,i)}$ corresponding with the missing values known in $\mathbf{z}$.
+
+To begin, note that a random sample for the exponential family has a complete sufficient statistic of $\sum_{i=1}^n x_i$. Hence for the *E-Step* we must find the expectation of $E(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)})$.
+
+Using and indicator variable $d_i = \begin{cases} 1 & x_i \in \mathbf{y} \\ 0 & x_i \in \mathbf{z}\end{cases}$ indicating presence and absence of data, we can expand
+
+$$E\left(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)} \right)  = E \left(\sum_{i=1}^n y_i d_i + z_i(1-d_i) \right)$$
+
+Now, we need to estimate or missing data, $z_i$. To do this, we will use the memoryless property of the exponential distribution to get 
+
+$$z_i = \begin{cases} \min\{\theta^{(p-1)},c_{(1,i)}\}  & 0 < z_i \leq c_{(1,i)} \\
+c_{(2,i)}+ \theta^{(p-1)} & z_i > c_{(2,i)}
+\end{cases}
+$$
+This means $$\begin{aligned}
+E(z_i) &= \frac{\int_0^{c_{(1,i)}} \min\{\theta^{(p-1)},c_{(1,i)}\}  \frac{1}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}} \, dx_i + \int_{c_{(2,i)}}^{\infty} (c_{(2,i)}+ \theta^{(p-1)})  \frac{1}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}} \, dx_i}
+{\int_0^{c_{(1,i)}}\frac{x_i}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}} \, dx_i + \int_{c_{(2,i)}}^{\infty}  \frac{x_i}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}}} \\
+&= \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}} 
+\end{aligned}$$
+
+Therefore, we can simplify our expectation step down to
+
+$$\begin{aligned} E\left(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)} \right)
+&= E \left(\sum_{i=1}^n y_i d_i + z_i(1-d_i) \right)
+\end{aligned}$$
+$$
+= \sum_{i=1}^n y_i d_i + (1-d_i) \left( \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}\right)
+$$
+
+And our maximization step is the solution to
+\[\begin{aligned}
+E(\mathbf{t(x)} | \theta^{(p)}) &= E(\sum_{i=1}^n x_i | \theta^{(p)}) =n \, \theta^{(p)} \\
+&= \sum_{i=1}^n y_i d_i + (1-d_i) \left( \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}\right)
+\end{aligned}
+\]
+\[
+\implies \theta^{(p)} =\frac{1}{n}\sum_{i=1}^n y_i d_i + (1-d_i) \left( \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}\right)
+\]
+
+### Simulation
+
+In the actuarial context, we could encounter data that includes the deductible, policy limit, and losses for each customer, where the losses would be unreported if they exceed the policy limit or are below the deductible.
+
+We will use computer simulation to see how well the algorithm holds given the parameter $\theta = 1000$.
+
+```{r}
+set.seed(53523)
+
+#Simulate Data
+n_customers <- 1000
+damages <- round(rexp(n_customers, 1/1000),2)
+deductible <- round(runif(n_customers, min = 0, max = 600))
+limit <- round(runif(n_customers, min = 5000, max = 20000))
+
+#combine data into one data frame
+customers <- as.data.frame(cbind(deductible, limit, damages))
+#censor data
+customers[(damages < deductible),]$damages = NA 
+customers[(limit < damages),]$damages = NA
+hist(customers$damages)
+
+#Separate into observed and unobserved data frames
+observed_data <- customers[!is.na(customers$damages),]
+unobserved_data <- customers[is.na(customers$damages),]
+
+
+#EM Algorithm
+sum_observed <- sum(observed_data$damages)
+
+#Initialize theta
+theta_new <- 500
+theta <- 0
+
+#iterate until difference between previous theta and new theta is small
+while((theta - theta_new)^2 > 0){
+  theta <- theta_new
+  
+  #Expectation step
+  m <- min(theta, unobserved_data$deductible)
+  
+  numerator <- m-m*exp(-unobserved_data$deductible/theta) +
+      (unobserved_data$limit +theta)*exp(-unobserved_data$limit/theta)
+    
+  denominator <- theta -(unobserved_data$deductible + theta)*
+    exp(-unobserved_data$deductible/theta) + 
+    (unobserved_data$limit + theta)*exp(-unobserved_data$limit/theta)
+
+  expectation <- sum_observed + sum(numerator/denominator)
+  
+  #Maximization step
+  theta_new <- (expectation)/n_customers
+}
+theta_new #display outcome
+```
+
+The output from this simulation estimated the value of $\theta$ to be `r theta_new`, which is `r 1000-theta_new` from the known value of 1000.
 
 ## References
 
