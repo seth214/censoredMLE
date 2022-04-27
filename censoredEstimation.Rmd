@@ -209,47 +209,38 @@ Determine $\theta^{(p)}$ as the solution to $E \left( \mathbf{t(x)} | \theta \ri
 
 ## Example (Exponential Distribution)
 
-For a definitive example, suppose we have data from an exponential distribution with unknown parameter $\theta$. For each sample, we are giving a vector of values, $(c_{(1,i)}, c_{(2,i)}, x_i)$, where $c_{(1,i)}$ represents a left-censoring point, $c_{(2,i)}$ represents a right-censoring point, and $x_i$ is the value the sample. If the $i^{th}$ sample is present, or rather if $c_{(1,i)} < x_i <c_{(2,i)}$ , we will call define $y_i = x_i$. Analagously, if the $i^{th}$ sample is absent,  or $c_{(1,i)} \geq x_i \text{ or }  x_i \geq c_{(2,i)}$, we will define $z_i = x_i$. Hence, $\mathbf{x}$ is a vector of our complete data, $\mathbf{y}$ is a vector of our incomplete data, and $\mathbf{z}$ is a vector of our unknown, or missing data. Our object is to use the EM algorithm to estimate $\theta$ using only $y$ and the censoring points $c_{(1,i)}$ and $c_{(2,i)}$ corresponding with the missing values known in $\mathbf{z}$.
+For a definitive example, suppose we have data from an exponential distribution with unknown parameter $\theta$. For each sample, we are giving a vector of values, $(c_{(1,i)}, c_{(2,i)}, x_i)$, where $c_{(1,i)}$ represents a left-censoring point, $c_{(2,i)}$ represents a right-censoring point, and $x_i$ is the value the sample. If the $i^{th}$ sample is present, or rather if $c_{(1,i)} < x_i <c_{(2,i)}$ , we will call define $y_i = x_i$. Analogously, if the $i^{th}$ sample is left-censored,  or $c_{(1,i)} \geq x_i$, we will define $l_i = x_i$ and if it is right-censored, or  $x_i \geq c_{(2,i)}$, we will define $r_i = x_i$. Hence, $\mathbf{x}$ is a vector of our complete data, $\mathbf{y}$ is a vector of our incomplete data, $\mathbf{l}$ is a vector of our left-censored data, and $\mathbf{r}$ is a vector of our right-censored data. Our object is to use the EM algorithm to estimate $\theta$ using only $y$ and the censoring points $c_{(1,i)}$ and $c_{(2,i)}$ corresponding with the values known in $\mathbf{l} and \mathbf{r}$.
 
-To begin, note that a random sample for the exponential family has a complete sufficient statistic of $\sum_{i=1}^n x_i$. Hence for the *E-Step* we must find the expectation of $E(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)})$.
+To begin, note that a random sample for the exponential family has a complete sufficient statistic of $\sum_{i=1}^n x_i$. Hence for the *E-Step* we must find the expectation of $E(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)})$, which we can expand as:
 
-Using and indicator variable $d_i = \begin{cases} 1 & x_i \in \mathbf{y} \\ 0 & x_i \in \mathbf{z}\end{cases}$ indicating presence and absence of data, we can expand
+$$E \left(\sum_{x_i \in \mathbf{y}} y_i + \sum_{x_i \in \mathbf{l}}l_i + \sum_{x_i \in \mathbf{r}} r_i\right)$$
 
-$$E\left(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)} \right)  = E \left(\sum_{i=1}^n y_i d_i + z_i(1-d_i) \right)$$
+Now, we need to estimate or censored data, $l_i$ and $r_i$. To do this, we will use the memoryless property of the exponential distribution to get $l_i =  \min\{\theta^{(p-1)},c_{(1,i)}\} \text{ and } r_i = c_{(1,i)} + \theta^{(p-1)}$.
 
-Now, we need to estimate or missing data, $z_i$. To do this, we will use the memoryless property of the exponential distribution to get 
-
-$$z_i = \begin{cases} \min\{\theta^{(p-1)},c_{(1,i)}\}  & 0 < z_i \leq c_{(1,i)} \\
-c_{(2,i)}+ \theta^{(p-1)} & z_i > c_{(2,i)}
-\end{cases}
-$$
-This means $$\begin{aligned}
-E(z_i) &= \frac{\int_0^{c_{(1,i)}} \min\{\theta^{(p-1)},c_{(1,i)}\}  \frac{1}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}} \, dx_i + \int_{c_{(2,i)}}^{\infty} (c_{(2,i)}+ \theta^{(p-1)})  \frac{1}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}} \, dx_i}
-{\int_0^{c_{(1,i)}}\frac{x_i}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}} \, dx_i + \int_{c_{(2,i)}}^{\infty}  \frac{x_i}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}}} \\
-&= \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
-{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}} 
+Note that $$\begin{aligned}
+E(l_i) &= \frac{\int_0^{c_{(1,i)}} \min\{\theta^{(p-1)},c_{(1,i)}\}  \frac{1}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}} \, dx_i}
+{\int_0^{c_{(1,i)}}\frac{x_i}{\theta^{(p-1)}}e^{-x_i/\theta^{(p-1)}} \, dx_i} \\
+&= \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}}} 
 \end{aligned}$$
 
 Therefore, we can simplify our expectation step down to
 
-$$\begin{aligned} E\left(\sum_{i=1}^n x_i | \mathbf{y}, \theta^{(p-1)} \right)
-&= E \left(\sum_{i=1}^n y_i d_i + z_i(1-d_i) \right)
+$$\begin{aligned} E \left(\sum_{x_i \in \mathbf{y}} y_i + \sum_{x_i \in \mathbf{l}}l_i + \sum_{x_i \in \mathbf{r}} r_i\right) = \sum_{x_i \in \mathbf{y}} y_i + \sum_{x_i \in \mathbf{l}}\frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}}}  +  \sum_{x_i \in \mathbf{r}} c_{(1,i)} + \theta^{(p-1)}
 \end{aligned}$$
-$$
-= \sum_{i=1}^n y_i d_i + (1-d_i) \left( \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
-{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}\right)
-$$
+
 
 And our maximization step is the solution to
 \[\begin{aligned}
 E(\mathbf{t(x)} | \theta^{(p)}) &= E(\sum_{i=1}^n x_i | \theta^{(p)}) =n \, \theta^{(p)} \\
-&= \sum_{i=1}^n y_i d_i + (1-d_i) \left( \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
-{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}\right)
+&= \sum_{x_i \in \mathbf{y}} y_i + \sum_{x_i \in \mathbf{l}}\frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}}}  +  \sum_{x_i \in \mathbf{r}} c_{(1,i)} + \theta^{(p-1)}
 \end{aligned}
 \]
 \[
-\implies \theta^{(p)} =\frac{1}{n}\sum_{i=1}^n y_i d_i + (1-d_i) \left( \frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+ \theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}
-{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}} + (c_{(2,i)}+\theta^{(p-1)})e^{-c_{(2,i)}/\theta^{(p-1)}}}\right)
+\implies \theta^{(p)} =\frac{1}{n} \left( \sum_{x_i \in \mathbf{y}} y_i + \sum_{x_i \in \mathbf{l}}\frac{\min\{\theta^{(p-1)},c_{(1,i)}\} -\min\{\theta^{(p-1)},c_{(1,i)}\}e^{-c_{(1,i)}/\theta^{(p-1)}}}
+{\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}}}  +  \sum_{x_i \in \mathbf{r}} c_{(1,i)} + \theta^{(p-1)}\right)
 \]
 
 ### Simulation
@@ -270,17 +261,15 @@ limit <- round(runif(n_customers, min = 5000, max = 20000))
 #combine data into one data frame
 customers <- as.data.frame(cbind(deductible, limit, damages))
 #censor data
-customers[(damages < deductible),]$damages = NA 
-customers[(limit < damages),]$damages = NA
-hist(customers$damages)
+left <- customers[(damages < deductible),]
+right <- customers[(limit < damages),]
 
-#Separate into observed and unobserved data frames
-observed_data <- customers[!is.na(customers$damages),]
-unobserved_data <- customers[is.na(customers$damages),]
+observed <- customers %>%
+  filter(damages > deductible & limit > damages)
 
 
 #EM Algorithm
-sum_observed <- sum(observed_data$damages)
+sum_observed <- sum(observed$damages)
 
 #Initialize theta
 theta_new <- 500
@@ -291,19 +280,11 @@ while((theta - theta_new)^2 > 0){
   theta <- theta_new
   
   #Expectation step
-  m <- min(theta, unobserved_data$deductible)
-  
-  numerator <- m-m*exp(-unobserved_data$deductible/theta) +
-      (unobserved_data$limit +theta)*exp(-unobserved_data$limit/theta)
-    
-  denominator <- theta -(unobserved_data$deductible + theta)*
-    exp(-unobserved_data$deductible/theta) + 
-    (unobserved_data$limit + theta)*exp(-unobserved_data$limit/theta)
+  m <- min(theta, left$deductible)
 
-  expectation <- sum_observed + sum(numerator/denominator)
-  
   #Maximization step
-  theta_new <- (expectation)/n_customers
+  theta_new <- (sum((m-m*exp(-left$deductible/theta)) / (theta -(left$deductible + theta)*
+    exp(-left$deductible/theta))) + sum(right$limit + theta) + sum(sum_observed))/n_customers
 }
 theta_new #display outcome
 ```
