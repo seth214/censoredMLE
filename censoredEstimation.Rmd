@@ -11,7 +11,7 @@ bibliography: bibliography.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 library(kableExtra)
 library(readxl)
 library(tidyverse)
@@ -207,7 +207,7 @@ Determine $\theta^{(p)}$ as the solution to $E \left( \mathbf{t(x)} | \theta \ri
 
 \setlength{\leftskip}{0cm}
 
-## Example (Exponential Distribution)
+### Example (Exponential Distribution)
 
 For a definitive example, suppose we have data from an exponential distribution with unknown parameter $\theta$. For each sample, we are giving a vector of values, $(c_{(1,i)}, c_{(2,i)}, x_i)$, where $c_{(1,i)}$ represents a left-censoring point, $c_{(2,i)}$ represents a right-censoring point, and $x_i$ is the value the sample. If the $i^{th}$ sample is present, or rather if $c_{(1,i)} < x_i <c_{(2,i)}$ , we will call define $y_i = x_i$. Analogously, if the $i^{th}$ sample is left-censored,  or $c_{(1,i)} \geq x_i$, we will define $l_i = x_i$ and if it is right-censored, or  $x_i \geq c_{(2,i)}$, we will define $r_i = x_i$. Hence, $\mathbf{x}$ is a vector of our complete data, $\mathbf{y}$ is a vector of our incomplete data, $\mathbf{l}$ is a vector of our left-censored data, and $\mathbf{r}$ is a vector of our right-censored data. Our object is to use the EM algorithm to estimate $\theta$ using only $y$ and the censoring points $c_{(1,i)}$ and $c_{(2,i)}$ corresponding with the values known in $\mathbf{l} and \mathbf{r}$.
 
@@ -243,7 +243,7 @@ E(\mathbf{t(x)} | \theta^{(p)}) &= E(\sum_{i=1}^n x_i | \theta^{(p)}) =n \, \the
 {\theta^{(p-1)} - (c_{(1,i)}+\theta^{(p-1)})e^{-c_{(1,i)}/\theta^{(p-1)}}}  +  \sum_{x_i \in \mathbf{r}} c_{(1,i)} + \theta^{(p-1)}\right)
 \]
 
-### Simulation
+### Simulation (Exponential Distribution)
 
 In the actuarial context, we could encounter data that includes the deductible, policy limit, and losses for each customer, where the losses would be unreported if they exceed the policy limit or are below the deductible.
 
