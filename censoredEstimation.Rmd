@@ -295,5 +295,18 @@ The output from this simulation estimated the value of $\theta$ to be `r theta_n
 
 ---
 nocite: '@*'
-...
+---
+
+<div id="refs"></div>
+
+### R Packages
+
+```{r packages, echo = FALSE, comment = NA, results = 'asis'}
+#cite R packages
+knitr::write_bib(.packages(), "packages.bib", tweak = TRUE) 
+print(RefManageR::ReadBib("packages.bib", check = FALSE),
+    .opts = list(style = "text", bib.style = "authoryear"))
+
+```
+
 
